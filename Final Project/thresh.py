@@ -25,8 +25,8 @@ cv2.setTrackbarPos('VMax', 'image', 255)
 hMin = sMin = vMin = hMax = sMax = vMax = 0
 phMin = psMin = pvMin = phMax = psMax = pvMax = 0
 
-img = cv2.imread('/home/stars/Documents/CV/Final Project/testPics/test (2).jpg')
-img = cv2.resize(img, (0,0), fx=0.1, fy=0.1) 
+img = cv2.imread('/home/stars/Documents/CV/Final Project/testPics/test (16).jpg')
+img = cv2.resize(img, (0,0), fx=1, fy=1) 
 output = img
 waitTime = 33
 

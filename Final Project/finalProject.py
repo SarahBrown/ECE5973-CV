@@ -1,7 +1,7 @@
 from cv2 import cv2
 import numpy as np
 
-lower = np.array([67,0,0])
+lower = np.array([89,0,0])
 upper = np.array([179,255,255])
 
 img = cv2.imread('/home/stars/Documents/CV/Final Project/testPics/test (2).jpg')
