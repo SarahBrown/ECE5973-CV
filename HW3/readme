@@ -1,0 +1,3 @@
+Open findhomography.ipynb with jupyter notebook
+
+If you want to use MATLAB (not recommend), the coordinates are stored in match_xy.mat. You could load them in MATLAB and write a MATLAB function to fit a homography instead
