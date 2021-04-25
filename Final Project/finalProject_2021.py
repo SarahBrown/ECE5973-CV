@@ -1,217 +1,88 @@
 import PySimpleGUI as sg
-
-import cv2
-
+from cv2 import cv2
 import numpy as np
+import imutils
+import pytesseract
 
+config = '--oem 3 --psm 6 outputbase digits -c tessedit_char_whitelist=0123456789'
+#config = '--psm 6'
+
+
+def filter(img):
+    imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    imgNoise = cv2.medianBlur(imgGray,3)
+    imgBlur = cv2.GaussianBlur(imgNoise,(5,5),0)
+    imgCanny = cv2.Canny(imgBlur, 0, 255,(7,7))
+    return(imgCanny)
+
+
+def dieText(img):
+    mask = np.zeros(img.shape[:2], dtype="uint8")
+    process_img = filter(img)
+
+    cnts = cv2.findContours(process_img.copy(), cv2.RETR_EXTERNAL,
+        cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+
+    firstPass = process_img.copy()
+
+    for cnt in cnts:
+        if cv2.arcLength(cnt,False) > 500:
+            accuracy = 0.03*cv2.arcLength(cnt,True)
+            approx = cv2.approxPolyDP(cnt, accuracy, True)
+
+            cv2.drawContours(mask,[approx],-1,(255,255,255),15)
+            #cv2.drawContours(mask, [cnt], -1, (255,255,255),5)
+
+    maskNot = cv2.bitwise_not(mask)
+    masked = cv2.bitwise_and(firstPass, firstPass, mask=maskNot)
+    masked = cv2.dilate(masked, (9,9))
+    masked = 255 - masked
+
+    masked_text = pytesseract.image_to_string(masked, config=config)
+    process_img_text = pytesseract.image_to_string(process_img, config=config)
+    return(masked_text)
 
 def main():
-
     sg.theme("LightGreen")
-
-
     # Define the window layout
-
     layout = [
-
-        [sg.Text("OpenCV Demo", size=(60, 1), justification="center")],
-
         [sg.Image(filename="", key="-IMAGE-")],
-
-        [sg.Radio("None", "Radio", True, size=(10, 1))],
-
-        [
-
-            sg.Radio("threshold", "Radio", size=(10, 1), key="-THRESH-"),
-
-            sg.Slider(
-
-                (0, 255),
-
-                128,
-
-                1,
-
-                orientation="h",
-
-                size=(40, 15),
-
-                key="-THRESH SLIDER-",
-
-            ),
-
-        ],
-
-        [
-
-            sg.Radio("canny", "Radio", size=(10, 1), key="-CANNY-"),
-
-            sg.Slider(
-
-                (0, 255),
-
-                128,
-
-                1,
-
-                orientation="h",
-
-                size=(20, 15),
-
-                key="-CANNY SLIDER A-",
-
-            ),
-
-            sg.Slider(
-
-                (0, 255),
-
-                128,
-
-                1,
-
-                orientation="h",
-
-                size=(20, 15),
-
-                key="-CANNY SLIDER B-",
-
-            ),
-
-        ],
-
-        [
-
-            sg.Radio("blur", "Radio", size=(10, 1), key="-BLUR-"),
-
-            sg.Slider(
-
-                (1, 11),
-
-                1,
-
-                1,
-
-                orientation="h",
-
-                size=(40, 15),
-
-                key="-BLUR SLIDER-",
-
-            ),
-
-        ],
-
-        [
-
-            sg.Radio("hue", "Radio", size=(10, 1), key="-HUE-"),
-
-            sg.Slider(
-
-                (0, 225),
-
-                0,
-
-                1,
-
-                orientation="h",
-
-                size=(40, 15),
-
-                key="-HUE SLIDER-",
-
-            ),
-
-        ],
-
-        [
-
-            sg.Radio("enhance", "Radio", size=(10, 1), key="-ENHANCE-"),
-
-            sg.Slider(
-
-                (1, 255),
-
-                128,
-
-                1,
-
-                orientation="h",
-
-                size=(40, 15),
-
-                key="-ENHANCE SLIDER-",
-
-            ),
-
-        ],
-
+        [sg.Button("Roll", size=(10, 1), key="-ROLL-")],
+        [sg.Text("", size=(60, 1), justification="center", key="-c-")],
         [sg.Button("Exit", size=(10, 1))],
-
     ]
 
 
     # Create the window and show it without the plot
+    window = sg.Window("OpenCV Final Project", layout, location=(800, 400))
 
-    window = sg.Window("OpenCV Integration", layout, location=(800, 400))
-
-
-    cap = cv2.VideoCapture(0)
-
+    cap = cv2.VideoCapture(2)
 
     while True:
-
         event, values = window.read(timeout=20)
 
         if event == "Exit" or event == sg.WIN_CLOSED:
-
             break
-
 
         ret, frame = cap.read()
 
+        if event == "-ROLL-":
+            dice_value = None
+            dice_values = []
+            # while ((dice_value == None)):
+            #     dice_value = dieText(frame)
+            #     ret, frame = cap.read()
+            #     print("rolling")
 
-        if values["-THRESH-"]:
-
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)[:, :, 0]
-
-            frame = cv2.threshold(
-
-                frame, values["-THRESH SLIDER-"], 255, cv2.THRESH_BINARY
-
-            )[1]
-
-        elif values["-CANNY-"]:
-
-            frame = cv2.Canny(
-
-                frame, values["-CANNY SLIDER A-"], values["-CANNY SLIDER B-"]
-
-            )
-
-        elif values["-BLUR-"]:
-
-            frame = cv2.GaussianBlur(frame, (21, 21), values["-BLUR SLIDER-"])
-
-        elif values["-HUE-"]:
-
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-            frame[:, :, 0] += int(values["-HUE SLIDER-"])
-
-            frame = cv2.cvtColor(frame, cv2.COLOR_HSV2BGR)
-
-        elif values["-ENHANCE-"]:
-
-            enh_val = values["-ENHANCE SLIDER-"] / 40
-
-            clahe = cv2.createCLAHE(clipLimit=enh_val, tileGridSize=(8, 8))
-
-            lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
-
-            lab[:, :, 0] = clahe.apply(lab[:, :, 0])
-
-            frame = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+            for i in range(10):
+                dice_value = dieText(frame)
+                dice_values.append((dice_value))
+                ret, frame = cap.read()
+                print("rolling")
+            print(dice_values)
+            print(str(dice_values))
+            window["-c-"].update((dice_value))
 
 
         imgbytes = cv2.imencode(".png", frame)[1].tobytes()

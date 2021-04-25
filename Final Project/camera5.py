@@ -27,7 +27,7 @@ def dieText(img):
     firstPass = process_img.copy()
 
     for cnt in cnts:
-        if cv2.arcLength(cnt,False) > 500:
+        if cv2.arcLength(cnt,False) > 450:
             accuracy = 0.03*cv2.arcLength(cnt,True)
             approx = cv2.approxPolyDP(cnt, accuracy, True)
 
@@ -36,7 +36,8 @@ def dieText(img):
 
     maskNot = cv2.bitwise_not(mask)
     masked = cv2.bitwise_and(firstPass, firstPass, mask=maskNot)
-    masked = cv2.dilate(masked, (7,7))
+    masked = cv2.dilate(masked, (11,11))
+    masked = 255 - masked
 
     masked_text = pytesseract.image_to_string(masked, config=config)
     process_img_text = pytesseract.image_to_string(process_img, config=config)
