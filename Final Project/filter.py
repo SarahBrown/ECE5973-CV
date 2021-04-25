@@ -1,6 +1,7 @@
 from cv2 import cv2
 import numpy as np
 import imutils
+import pytesseract
 
 img = cv2.imread("/home/stars/Documents/CV/Final Project/testPics/test (17).jpg")
 #resized = cv2.resize(img, (0,0), fx=0.25, fy=0.25) 
@@ -12,6 +13,8 @@ imgBlur = cv2.GaussianBlur(imgNoise,(5,5),0)
 imgCanny = cv2.Canny(imgBlur, 0, 255)
 
 cv2.imshow("process", imgCanny)
+text = pytesseract.image_to_string(imgCanny)
+print(text)
 
 cnts = cv2.findContours(imgCanny.copy(), cv2.RETR_EXTERNAL,
     cv2.CHAIN_APPROX_SIMPLE)
