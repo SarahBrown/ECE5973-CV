@@ -3,17 +3,17 @@ import numpy as np
 import imutils
 import pytesseract
 
-config = '--oem 3 --psm 6 outputbase digits'
+config = '--oem 3 --psm 6 outputbase digits -c tessedit_char_whitelist=123456'
 
 def nothing(x):
     pass
 
 def filter(img):
-    imgFilter = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    imgFilter = cv2.medianBlur(imgFilter,9)
-    imgFilter = cv2.GaussianBlur(imgFilter,(5,5),0)
-    imgFilter = cv2.Canny(imgFilter, 0, 255,(5,5))
-    return(imgFilter)
+    imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    imgNoise = cv2.medianBlur(imgGray,3)
+    imgBlur = cv2.GaussianBlur(imgNoise,(5,5),3)
+    imgCanny = cv2.Canny(imgBlur, 0, 255,(7,7))
+    return(imgCanny)
 
 
 def dieText(img):
@@ -30,22 +30,15 @@ def dieText(img):
         if cv2.arcLength(cnt,False) > 450:
             accuracy = 0.03*cv2.arcLength(cnt,True)
             approx = cv2.approxPolyDP(cnt, accuracy, True)
-            moment=cv2.moments(approx) 
-            if moment["m00"] != 0:
-                cx = int(moment['m10'] / moment['m00']) 
-                cy = int(moment['m01'] / moment['m00'])
-            else:
-                cx = 0
-                cy = 0
-            
-            #mask = cv2.circle(mask, (cx,cy), 60, (255,255,255), -1)
-            cv2.drawContours(mask,[approx],-1,(255,255,255),15) #this one
-            #cv2.drawContours(mask, [cnt], -1, (255,255,255),5)
+
+            cv2.drawContours(mask,[approx],-1,(255,255,255),15)
+            cv2.drawContours(mask, [cnt], -1, (255,255,255),5)
 
     maskNot = cv2.bitwise_not(mask)
     masked = cv2.bitwise_and(firstPass, firstPass, mask=maskNot)
     masked = cv2.dilate(masked, (11,11))
     masked = 255 - masked
+    
 
     masked_text = pytesseract.image_to_string(masked, config=config)
     process_img_text = pytesseract.image_to_string(process_img, config=config)
