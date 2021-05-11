@@ -11,9 +11,11 @@ def nothing(x):
 def filter(img):
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     imgNoise = cv2.medianBlur(imgGray,3)
-    imgBlur = cv2.GaussianBlur(imgNoise,(5,5),3)
+    imgBlur = cv2.GaussianBlur(imgNoise,(3,3),5)
     imgCanny = cv2.Canny(imgBlur, 0, 255,(7,7))
     return(imgCanny)
+
+    
 
 
 def dieText(img):
@@ -27,7 +29,7 @@ def dieText(img):
     firstPass = process_img.copy()
 
     for cnt in cnts:
-        if cv2.arcLength(cnt,False) > 450:
+        if cv2.arcLength(cnt,False) > 500:
             accuracy = 0.03*cv2.arcLength(cnt,True)
             approx = cv2.approxPolyDP(cnt, accuracy, True)
 
@@ -44,8 +46,7 @@ def dieText(img):
     process_img_text = pytesseract.image_to_string(process_img, config=config)
     return(process_img, masked, process_img_text, masked_text, mask)
 
-cap = cv2.VideoCapture(0)
-#cap.set(15,-4)
+cap = cv2.VideoCapture(2)
 
 if not (cap.isOpened()):
     print('Could not open video device')
